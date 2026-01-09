@@ -41,9 +41,9 @@
 下のブロックは `run.py` が最新run情報を自動更新する（手編集しない）。
 
 <!-- AUTO:LAST_RUN_START -->
-- 2026-01-09 12:08:12 JST
-- request: テスト：STATE/PROJECT_CONTEXT自動更新確認
-- markdown: `20260109_120812_テストSTATEPROJECT_CONTEXT自動更新確認.md`
-- manifest: `20260109_120812_テストSTATEPROJECT_CONTEXT自動更新確認_manifest.json`
-- sql: `20260109_120812_テストSTATEPROJECT_CONTEXT自動更新確認_production.sql`, `20260109_120812_テストSTATEPROJECT_CONTEXT自動更新確認_validation_1.sql`, `20260109_120812_テストSTATEPROJECT_CONTEXT自動更新確認_validation_2.sql`
+- 2026-01-09 12:32:15 JST
+- request: テスト：git hash 取得確認
+- markdown: `20260109_123215_テストgit_hash_取得確認.md`
+- manifest: `20260109_123215_テストgit_hash_取得確認_manifest.json`
+- sql: `20260109_123215_テストgit_hash_取得確認_production.sql`, `20260109_123215_テストgit_hash_取得確認_validation_1.sql`, `20260109_123215_テストgit_hash_取得確認_validation_2.sql`
 <!-- AUTO:LAST_RUN_END -->
