@@ -1,0 +1,103 @@
+import os
+import sys
+from datetime import datetime
+from pathlib import Path
+
+from dotenv import load_dotenv
+from openai import OpenAI
+from .agents import FRAMER, SQL, FINISHER
+
+load_dotenv()
+
+def slug(s: str, max_len: int = 40) -> str:
+    keep = []
+    for ch in s.strip():
+        if ch.isalnum():
+            keep.append(ch)
+        elif ch in " _-":
+            keep.append("_")
+    out = "".join(keep)
+    while "__" in out:
+        out = out.replace("__", "_")
+    return out[:max_len].strip("_") or "run"
+
+def read_template(name: str) -> str:
+    path = Path("src/templates") / f"{name}.md"
+    if not path.exists():
+        raise FileNotFoundError(f"Template not found: {path}")
+    return path.read_text(encoding="utf-8")
+
+def parse_args(argv):
+    template = None
+    text_parts = []
+
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a == "--template":
+            if i + 1 >= len(argv):
+                raise ValueError("--template requires a name")
+            template = argv[i + 1]
+            i += 2
+            continue
+        text_parts.append(a)
+        i += 1
+
+    user_text = " ".join(text_parts).strip()
+    return template, user_text
+
+def main():
+    template, user_text = parse_args(sys.argv[1:])
+
+    if not user_text and not template:
+        print('Usage:')
+        print('  python -m src.run "your request"')
+        print('  python -m src.run --template inflow_funnel "extra notes (optional)"')
+        sys.exit(1)
+
+    model = os.getenv("MODEL", "")
+    if not model:
+        raise RuntimeError("MODEL is empty. Set MODEL in .env")
+
+    if template:
+        base = read_template(template)
+        if user_text:
+            user_text = base + "\n\n---\n\n## Extra notes\n" + user_text
+        else:
+            user_text = base
+
+    client = OpenAI()
+
+    outputs = []
+    context = user_text
+
+    for agent in [FRAMER, SQL, FINISHER]:
+        print(f"[Main] Calling {agent.name}...")
+        resp = client.responses.create(
+            model=model,
+            input=[
+                {"role": "system", "content": agent.system},
+                {"role": "user", "content": context},
+            ],
+        )
+        out = resp.output_text
+        outputs.append((agent.name, out))
+        context = f"{user_text}\n\n---\nPrevious output from {agent.name}:\n{out}\n"
+
+    # console output
+    full_blocks = []
+    for name, out in outputs:
+        block = f"## {name}\n{out}\n"
+        print("\n" + block)
+        full_blocks.append(block)
+
+    # save to runs/
+    Path("runs").mkdir(parents=True, exist_ok=True)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"runs/{ts}_{slug('template_' + (template or 'none'))}.md"
+    content = f"# Input\n{user_text}\n\n---\n\n" + "\n".join(full_blocks)
+    Path(filename).write_text(content, encoding="utf-8")
+    print(f"[Main] Saved: {filename}")
+
+if __name__ == "__main__":
+    main()
